@@ -20,6 +20,9 @@ opengl_main:	opengl_main.o ${OBJS}
 kernel_main:	kernel_main.o ${OBJS}
 	$(CC) $(CFLAGS) -o $@ kernel_main.o ${OBJS} $(LDFLAGS)
 
+profile:	kernel_main.o ${OBJS}
+	gcc -Wall cloth_code.c kernel_main.c -o kernel_main -pg -g -lm
+
 .SUFFIXES:	.o .c
 
 %.o : %.c	cloth_code.h cloth_param.h

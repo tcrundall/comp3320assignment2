@@ -73,7 +73,7 @@ void loopcode(int n, double mass, double fcon,
               double *pe, double *ke,double *te)
 {
   int i,j;
-  double rlen,xdiff,ydiff,zdiff,vmag,damp,vdot;
+  double rlen,xdiff,ydiff,zdiff,vmag,vmag_i,damp,vdot;
         
   //update position as per MD simulation
   for (i=0;i<n;i++){
@@ -146,7 +146,7 @@ double eval_pef(int n, int delta, double grav, double sep,
                 double fcon, double *x, double *y, double *z,                
                 double *fx, double *fy, double *fz)
 {
-  double pe,rlen,xdiff,ydiff,zdiff,vmag;
+  double pe,rlen,xdiff,ydiff,zdiff,vmag,vmag_i;
   int nx, ny, dx, dy;
 
   pe = 0.0;
@@ -167,12 +167,13 @@ double eval_pef(int n, int delta, double grav, double sep,
             xdiff = x[dx*n+dy]-x[nx*n+ny];
             ydiff = y[dx*n+dy]-y[nx*n+ny];
             zdiff = z[dx*n+dy]-z[nx*n+ny];
-            vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff);
+            vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); //changed to 1/vmag_i
+            vmag_i = 1/vmag;
             //potential energy and force
             pe += fcon*(vmag-rlen);
-            fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)/vmag;
-            fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)/vmag;
-            fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)/vmag;
+            fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+            fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)*vmag_i;
+            fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)*vmag_i;
           }
         }
       }
