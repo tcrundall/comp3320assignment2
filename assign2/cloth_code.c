@@ -4,13 +4,13 @@
 #include <math.h>
 
 void initMatrix(int n, double mass, double fcon, 
-		int delta, double grav, double sep, double rball,
-		double offset,
-		double dt, double **x, double **y, double **z,
-		double** cpx, double** cpy, double** cpz,
-		double **fx, double **fy, double **fz,
-		double **vx, double **vy, double **vz,
-		double **oldfx, double **oldfy, double **oldfz)
+                int delta, double grav, double sep, double rball,
+                double offset,
+                double dt, double **x, double **y, double **z,
+                double** cpx, double** cpy, double** cpz,
+                double **fx, double **fy, double **fz,
+                double **vx, double **vy, double **vz,
+                double **oldfx, double **oldfy, double **oldfz)
 {
   int i,nx,ny;
   
@@ -64,17 +64,17 @@ void initMatrix(int n, double mass, double fcon,
 }
 
 void loopcode(int n, double mass, double fcon,
-	      int delta, double grav, double sep, double rball,
-	      double xball, double yball, double zball,
-	      double dt, double *x, double *y, double *z,
-	      double *fx, double *fy, double *fz,
-	      double *vx, double *vy, double *vz,
-	      double *oldfx, double *oldfy, double *oldfz, 
-	      double *pe, double *ke,double *te)
+              int delta, double grav, double sep, double rball,
+              double xball, double yball, double zball,
+              double dt, double *x, double *y, double *z,
+              double *fx, double *fy, double *fz,
+              double *vx, double *vy, double *vz,
+              double *oldfx, double *oldfy, double *oldfz, 
+              double *pe, double *ke,double *te)
 {
   int i,j;
-  double rlen,xdiff,ydiff,zdiff,vmag,damp;
-	
+  double rlen,xdiff,ydiff,zdiff,vmag,damp,vdot;
+        
   //update position as per MD simulation
   for (i=0;i<n;i++){
     for (j=0;j<n;j++){
@@ -95,7 +95,7 @@ void loopcode(int n, double mass, double fcon,
     }
   }
 
-  //	apply constraints - push cloth outside of ball, set to zero velocity
+  //apply constraints - push cloth outside of ball, set to zero velocity
   for (i=0;i<n;i++){
     for (j=0;j<n;j++){
       xdiff = x[j*n+i]-xball;
@@ -103,12 +103,19 @@ void loopcode(int n, double mass, double fcon,
       zdiff = z[j*n+i]-zball;
       vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff);
       if (vmag < rball){
-	x[j*n+i]=xball+xdiff*rball/vmag;
-	y[j*n+i]=yball+ydiff*rball/vmag;
-	z[j*n+i]=zball+zdiff*rball/vmag;
-	vx[j*n+i]=0.0;
-	vy[j*n+i]=0.0;
-	vz[j*n+i]=0.0;
+        x[j*n+i]=xball+xdiff*rball/vmag;
+        y[j*n+i]=yball+ydiff*rball/vmag;
+        z[j*n+i]=zball+zdiff*rball/vmag;
+        //vx[j*n+i]=0.0;
+        //vy[j*n+i]=0.0;
+        //vz[j*n+i]=0.0;
+
+        //Set non-tangential component of velocity to zero:
+        vdot = (vx[j*n+i]*xdiff + vy[j*n+i]*ydiff + vz[j*n+i]*zdiff)/vmag;
+
+        vx[j*n+i] -= vdot*xdiff/vmag;
+        vy[j*n+i] -= vdot*ydiff/vmag;
+        vz[j*n+i] -= vdot*zdiff/vmag;
       }
     }
   }
@@ -136,7 +143,7 @@ void loopcode(int n, double mass, double fcon,
 }
 
 double eval_pef(int n, int delta, double grav, double sep,
-                double fcon, double *x, double *y, double *z,		
+                double fcon, double *x, double *y, double *z,                
                 double *fx, double *fy, double *fz)
 {
   double pe,rlen,xdiff,ydiff,zdiff,vmag;
@@ -151,23 +158,23 @@ double eval_pef(int n, int delta, double grav, double sep,
       fz[nx*n+ny]=-grav;
       //loop over displacements
       for (dy=MAX(ny-delta,0);dy<MIN(ny+delta+1,n);dy++){
-	for (dx=MAX(nx-delta,0);dx<MIN(nx+delta+1,n);dx++){
-	  // exclude self interaction
-	  if (nx!=dx || ny!=dy){
-	    // compute reference distance
-	    rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
-	    // compute actual distance
-	    xdiff = x[dx*n+dy]-x[nx*n+ny];
-	    ydiff = y[dx*n+dy]-y[nx*n+ny];
-	    zdiff = z[dx*n+dy]-z[nx*n+ny];
-	    vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff);
-	    //potential energy and force
-	    pe += fcon*(vmag-rlen);
-	    fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)/vmag;
-	    fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)/vmag;
-	    fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)/vmag;
-	  }
-	}
+        for (dx=MAX(nx-delta,0);dx<MIN(nx+delta+1,n);dx++){
+          // exclude self interaction
+          if (nx!=dx || ny!=dy){
+            // compute reference distance
+            rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
+            // compute actual distance
+            xdiff = x[dx*n+dy]-x[nx*n+ny];
+            ydiff = y[dx*n+dy]-y[nx*n+ny];
+            zdiff = z[dx*n+dy]-z[nx*n+ny];
+            vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff);
+            //potential energy and force
+            pe += fcon*(vmag-rlen);
+            fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)/vmag;
+            fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)/vmag;
+            fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)/vmag;
+          }
+        }
       }
     }
   }
