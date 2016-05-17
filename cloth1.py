@@ -148,6 +148,7 @@ PE=compute_force(interact,gravity,separation,fcon)
 
 iter=0
 while (1):
+        rate(100)
 	iter+=1
 	if (verbose):
 		print "iteration and potential energy ",iter, PE
