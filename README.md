@@ -1,1 +1,2 @@
-COMP3320 Assignment 2\nTim Crundall
+CMP3320 Assignment 2
+Tim Crundall
