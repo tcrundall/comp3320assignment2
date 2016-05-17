@@ -157,30 +157,78 @@ double eval_pef(int n, int delta, double grav, double sep,
       fy[nx*n+ny]=0.0;
       fz[nx*n+ny]=-grav;
       //loop over displacements
+      // Section A
       for (dy=MAX(ny-delta,0);dy<MIN(ny+delta+1,n);dy++){
-        for (dx=MAX(nx-delta,0);dx<MIN(nx+delta+1,n);dx++){
+        for (dx=MAX(nx-delta,0);dx<nx;dx++){
           // exclude self interaction
-          if (nx!=dx || ny!=dy){
-            // compute reference distance
-            rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
-            // compute actual distance
-            xdiff = x[dx*n+dy]-x[nx*n+ny];
-            ydiff = y[dx*n+dy]-y[nx*n+ny];
-            zdiff = z[dx*n+dy]-z[nx*n+ny];
-            vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); //changed to 1/vmag_i
-            vmag_i = 1/vmag;
-            //potential energy and force
-            pe += fcon*(vmag-rlen);
-            fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
-            fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)*vmag_i;
-            fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)*vmag_i;
-          }
+          // compute reference distance
+          rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
+          // compute actual distance
+          xdiff = x[dx*n+dy]-x[nx*n+ny];
+          ydiff = y[dx*n+dy]-y[nx*n+ny];
+          zdiff = z[dx*n+dy]-z[nx*n+ny];
+          vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); //changed to 1/vmag_i
+          vmag_i = 1/vmag;
+          //potential energy and force
+          pe += fcon*(vmag-rlen);
+          fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+          fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+          fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
         }
+      }
+      // Section B
+      for (dy=MAX(ny-delta,0);dy<MIN(ny+delta+1,n);dy++){
+        for (dx=nx+1;dx<MIN(nx+delta+1,n);dx++){
+          // exclude self interaction
+          // compute reference distance
+          rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
+          // compute actual distance
+          xdiff = x[dx*n+dy]-x[nx*n+ny];
+          ydiff = y[dx*n+dy]-y[nx*n+ny];
+          zdiff = z[dx*n+dy]-z[nx*n+ny];
+          vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); //changed to 1/vmag_i
+          vmag_i = 1/vmag;
+          //potential energy and force
+          pe += fcon*(vmag-rlen);
+          fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+          fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+          fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+        }
+      }
+      // Section C
+      dx=nx;
+      for (dy=MAX(ny-delta,0);dy<ny;dy++){
+        // compute reference distance
+        rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
+        // compute actual distance
+        xdiff = x[dx*n+dy]-x[nx*n+ny];
+        ydiff = y[dx*n+dy]-y[nx*n+ny];
+        zdiff = z[dx*n+dy]-z[nx*n+ny];
+        vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); //changed to 1/vmag_i
+        vmag_i = 1/vmag;
+        //potential energy and force
+        pe += fcon*(vmag-rlen);
+        fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+        fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+        fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+      }
+      // Section D
+      for (dy=ny+1;dy<MIN(ny+delta+1,n);dy++){
+        // compute reference distance
+        rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
+        // compute actual distance
+        xdiff = x[dx*n+dy]-x[nx*n+ny];
+        ydiff = y[dx*n+dy]-y[nx*n+ny];
+        zdiff = z[dx*n+dy]-z[nx*n+ny];
+        vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); //changed to 1/vmag_i
+        vmag_i = 1/vmag;
+        //potential energy and force
+        pe += fcon*(vmag-rlen);
+        fx[nx*n+ny]+=fcon*xdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+        fy[nx*n+ny]+=fcon*ydiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+        fz[nx*n+ny]+=fcon*zdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
       }
     }
   }
   return pe;
 } 
-
-
-
