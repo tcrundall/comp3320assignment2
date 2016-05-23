@@ -187,6 +187,7 @@ double eval_pef(int n, int delta, double grav, double sep,
       double fx_sum[2] = {0.0, 0.0};
       double fy_sum[2] = {0.0, 0.0};
       double fz_sum[2] = {0.0, 0.0};
+      double dummy[2]  = {0.0, 0.0};
 
       // Section A
       for (dy=MAX(ny-delta,0);dy<ny;dy++){
@@ -214,7 +215,8 @@ double eval_pef(int n, int delta, double grav, double sep,
           fz[ny*n+nx]+=fcon*zdiff*(vmag-rlen)/vmag;
         }
 
-        for (dx=MAX(nx-delta,0)+MAX(nx-delta,0)%2; dx<(MIN(nx+delta+1,n)/2) * 2;dx+=2) 
+        for (dx=MAX(nx-delta,0)+MAX(nx-delta,0)%2; //forces even starting index
+            dx<(MIN(nx+delta+1,n)/2) * 2;dx+=2) 
         {
           //printf("-- -- A.2: %d\n", dx);
           // exclude self interaction
@@ -258,6 +260,7 @@ double eval_pef(int n, int delta, double grav, double sep,
           _mm_store_pd(pe_sum, sse_PE);
 
           //printf("Here3\n");
+          //printf("PE contriubtion is: %f\n", pe_sum[0]);
           pe += pe_sum[0];
           pe += pe_sum[1];
 
@@ -266,24 +269,23 @@ double eval_pef(int n, int delta, double grav, double sep,
           sse_fx = _mm_div_pd(sse_fx, sse_vmag);
           //printf("Here3.33\n");
           _mm_store_pd(fx_sum, sse_fx);
-          fx[ny*n+nx] += fx_sum[0];
-          fx[ny*n+nx] += fx_sum[1];
+          fx[ny*n+nx] += fx_sum[0] + fx_sum[1];
           
           //printf("Here3.5\n");
           __m128d sse_fy = _mm_mul_pd(sse_PE, sse_rlen);
           sse_fy = _mm_div_pd(sse_fy, sse_vmag);
           _mm_store_pd(fy_sum, sse_fy);
-          fy[ny*n+nx] += fy_sum[0];
-          fy[ny*n+nx] += fy_sum[1];
+          fy[ny*n+nx] += fy_sum[0] + fy_sum[1];
 
           //printf("Here3.75\n");
+          //printf("fz contribution is: %f\n", fz_sum[0]);
           __m128d sse_fz = _mm_mul_pd(sse_PE, sse_rlen);
           sse_fz = _mm_div_pd(sse_fz, sse_vmag);
-          _mm_store_pd(fy_sum, sse_fy);
-          fy[ny*n+nx] += fy_sum[0];
-          fy[ny*n+nx] += fy_sum[1];
+          _mm_store_pd(fz_sum, sse_fz);
+          fy[ny*n+nx] += fz_sum[0] + fz_sum[1];
 
           //printf("Here4\n");
+          //scanf("%s");
         }
 
         // handles the last column if unaligned
