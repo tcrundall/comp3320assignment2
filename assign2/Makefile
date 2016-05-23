@@ -23,6 +23,9 @@ kernel_main:	kernel_main.o ${OBJS}
 profile:	kernel_main.o ${OBJS}
 	gcc -Wall cloth_code.c kernel_main.c -o kernel_main -pg -g -lm
 
+SSE:            kernel_main.o ${OBJS}
+	gcc -O3 -msse2 kernel_main.c cloth_code.c -o kernel_main -pg -g -lm
+
 .SUFFIXES:	.o .c
 
 %.o : %.c	cloth_code.h cloth_param.h
