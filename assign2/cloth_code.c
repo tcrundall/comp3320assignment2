@@ -171,6 +171,19 @@ double eval_pef(int n, int delta, double grav, double sep,
   double pe,rlen,xdiff,ydiff,zdiff,vmag,vmag_i;
   int nx, ny, dx, dy;
   double rlenArr[2];
+  double pe_sum[2];
+  double fx_sum[2];
+  double fy_sum[2];
+  double fz_sum[2];
+  double dummy[2];
+  __m128d sse_rlen,
+    sse_nx, sse_ny, sse_nz,
+    sse_dx, sse_dy, sse_dz,
+    sse_xdiff, sse_ydiff, sse_zdiff,
+    sse_fx, sse_fy, sse_fz,
+    sse_sum, sse_mul, sse_vmag, sse_fcon,
+    sse_PE;
+  
 
   pe = 0.0;
   //loop over particles
@@ -183,11 +196,6 @@ double eval_pef(int n, int delta, double grav, double sep,
       fz[ny*n+nx]=-grav;
       //loop over displacements
 
-      double pe_sum[2] = {0.0, 0.0};
-      double fx_sum[2] = {0.0, 0.0};
-      double fy_sum[2] = {0.0, 0.0};
-      double fz_sum[2] = {0.0, 0.0};
-      double dummy[2]  = {0.0, 0.0};
 
       // Section A
       for (dy=MAX(ny-delta,0);dy<ny;dy++){
@@ -216,7 +224,7 @@ double eval_pef(int n, int delta, double grav, double sep,
         }
 
         for (dx=MAX(nx-delta,0)+MAX(nx-delta,0)%2; //forces even starting index
-            dx<(MIN(nx+delta+1,n)/2) * 2;dx+=2) 
+             dx<(MIN(nx+delta+1,n)/2) * 2;dx+=2) 
         {
           //printf("-- -- A.2: %d\n", dx);
           // exclude self interaction
@@ -226,24 +234,24 @@ double eval_pef(int n, int delta, double grav, double sep,
           rlenArr[1] = sqrt((double)((nx+1-dx)*(nx+1-dx)+(ny-dy)*(ny-dy)))*sep;
           
           //printf("Here1\n");
-          __m128d sse_rlen = _mm_load_pd(&rlenArr[0]);
+          sse_rlen = _mm_load_pd(&rlenArr[0]);
 
-          __m128d sse_nx = _mm_set1_pd(x[ny*n+nx]);
-          __m128d sse_ny = _mm_set1_pd(y[ny*n+nx]);
-          __m128d sse_nz = _mm_set1_pd(z[ny*n+nx]);
+          sse_nx = _mm_set1_pd(x[ny*n+nx]);
+          sse_ny = _mm_set1_pd(y[ny*n+nx]);
+          sse_nz = _mm_set1_pd(z[ny*n+nx]);
 
-          __m128d sse_dx = _mm_load_pd(&x[dy*n+dx]);
-          __m128d sse_dy = _mm_load_pd(&y[dy*n+dx]);
-          __m128d sse_dz = _mm_load_pd(&z[dy*n+dx]);
+          sse_dx = _mm_load_pd(&x[dy*n+dx]);
+          sse_dy = _mm_load_pd(&y[dy*n+dx]);
+          sse_dz = _mm_load_pd(&z[dy*n+dx]);
 
-          __m128d sse_xdiff = _mm_sub_pd(sse_dx, sse_nx);
-          __m128d sse_ydiff = _mm_sub_pd(sse_dy, sse_ny);
-          __m128d sse_zdiff = _mm_sub_pd(sse_dz, sse_nz);
+          sse_xdiff = _mm_sub_pd(sse_dx, sse_nx);
+          sse_ydiff = _mm_sub_pd(sse_dy, sse_ny);
+          sse_zdiff = _mm_sub_pd(sse_dz, sse_nz);
 
           //printf("Here2\n");
-          __m128d sse_sum = _mm_set1_pd(0.0);
+          sse_sum = _mm_set1_pd(0.0);
 
-          __m128d sse_mul = _mm_mul_pd(sse_xdiff, sse_xdiff);
+          sse_mul = _mm_mul_pd(sse_xdiff, sse_xdiff);
           sse_sum = _mm_add_pd(sse_mul, sse_sum);
 
           sse_mul = _mm_mul_pd(sse_ydiff, sse_ydiff);
@@ -252,10 +260,10 @@ double eval_pef(int n, int delta, double grav, double sep,
           sse_mul = _mm_mul_pd(sse_zdiff, sse_zdiff);
           sse_sum = _mm_add_pd(sse_mul, sse_sum);
 
-          __m128d sse_vmag = _mm_sqrt_pd(sse_sum);
+          sse_vmag = _mm_sqrt_pd(sse_sum);
 
-          __m128d sse_fcon = _mm_set1_pd(fcon);
-          __m128d sse_PE = _mm_sub_pd(sse_vmag, sse_rlen);
+          sse_fcon = _mm_set1_pd(fcon);
+          sse_PE = _mm_sub_pd(sse_vmag, sse_rlen);
           sse_PE = _mm_mul_pd(sse_fcon, sse_PE);
           _mm_store_pd(pe_sum, sse_PE);
 
@@ -265,21 +273,21 @@ double eval_pef(int n, int delta, double grav, double sep,
           pe += pe_sum[1];
 
           //printf("Here3.25\n");
-          __m128d sse_fx = _mm_mul_pd(sse_PE, sse_rlen);
+          sse_fx = _mm_mul_pd(sse_PE, sse_rlen);
           sse_fx = _mm_div_pd(sse_fx, sse_vmag);
           //printf("Here3.33\n");
           _mm_store_pd(fx_sum, sse_fx);
           fx[ny*n+nx] += fx_sum[0] + fx_sum[1];
           
           //printf("Here3.5\n");
-          __m128d sse_fy = _mm_mul_pd(sse_PE, sse_rlen);
+          sse_fy = _mm_mul_pd(sse_PE, sse_rlen);
           sse_fy = _mm_div_pd(sse_fy, sse_vmag);
           _mm_store_pd(fy_sum, sse_fy);
           fy[ny*n+nx] += fy_sum[0] + fy_sum[1];
 
           //printf("Here3.75\n");
           //printf("fz contribution is: %f\n", fz_sum[0]);
-          __m128d sse_fz = _mm_mul_pd(sse_PE, sse_rlen);
+          sse_fz = _mm_mul_pd(sse_PE, sse_rlen);
           sse_fz = _mm_div_pd(sse_fz, sse_vmag);
           _mm_store_pd(fz_sum, sse_fz);
           fy[ny*n+nx] += fz_sum[0] + fz_sum[1];
@@ -312,25 +320,125 @@ double eval_pef(int n, int delta, double grav, double sep,
 
       // Section B
       for (dy=ny+1;dy<MIN(ny+delta+1,n);dy++){
-        //printf("-- B.1: %d\n", dy);
-        for (dx=MAX(nx-delta,0);dx<MIN(nx+delta+1,n);dx++){
-          //printf("-- -- B.2: %d\n", dx);
-          // exclude self interaction
+        //printf("-- A.1: %d\n", dy);
+
+        // Handles the edge column if unaligned
+        if (MAX(nx-delta,0)%2 == 1) 
+        {
+          dx = MAX(nx-delta,0);
+          //printf("Here5\n");
+          //printf("-- -- A.2': %d\n", dx);
           // compute reference distance
           rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
+          
           // compute actual distance
           xdiff = x[dy*n+dx]-x[ny*n+nx];
           ydiff = y[dy*n+dx]-y[ny*n+nx];
           zdiff = z[dy*n+dx]-z[ny*n+nx];
-          vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); //changed to 1/vmag_i
-          vmag_i = 1/vmag;
+          vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); 
+
           //potential energy and force
           pe += fcon*(vmag-rlen);
-          fx[ny*n+nx]+=fcon*xdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
-          fy[ny*n+nx]+=fcon*ydiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
-          fz[ny*n+nx]+=fcon*zdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
+          fx[ny*n+nx]+=fcon*xdiff*(vmag-rlen)/vmag;
+          fy[ny*n+nx]+=fcon*ydiff*(vmag-rlen)/vmag;
+          fz[ny*n+nx]+=fcon*zdiff*(vmag-rlen)/vmag;
+        }
+
+        for (dx=MAX(nx-delta,0)+MAX(nx-delta,0)%2; //forces even starting index
+             dx<(MIN(nx+delta+1,n)/2) * 2;dx+=2) 
+        {
+          //printf("-- -- A.2: %d\n", dx);
+          // exclude self interaction
+          // compute reference distance
+          
+          rlenArr[0] = sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
+          rlenArr[1] = sqrt((double)((nx+1-dx)*(nx+1-dx)+(ny-dy)*(ny-dy)))*sep;
+          
+          //printf("Here1\n");
+          sse_rlen = _mm_load_pd(&rlenArr[0]);
+
+          sse_nx = _mm_set1_pd(x[ny*n+nx]);
+          sse_ny = _mm_set1_pd(y[ny*n+nx]);
+          sse_nz = _mm_set1_pd(z[ny*n+nx]);
+
+          sse_dx = _mm_load_pd(&x[dy*n+dx]);
+          sse_dy = _mm_load_pd(&y[dy*n+dx]);
+          sse_dz = _mm_load_pd(&z[dy*n+dx]);
+
+          sse_xdiff = _mm_sub_pd(sse_dx, sse_nx);
+          sse_ydiff = _mm_sub_pd(sse_dy, sse_ny);
+          sse_zdiff = _mm_sub_pd(sse_dz, sse_nz);
+
+          //printf("Here2\n");
+          sse_sum = _mm_set1_pd(0.0);
+
+          sse_mul = _mm_mul_pd(sse_xdiff, sse_xdiff);
+          sse_sum = _mm_add_pd(sse_mul, sse_sum);
+
+          sse_mul = _mm_mul_pd(sse_ydiff, sse_ydiff);
+          sse_sum = _mm_add_pd(sse_mul, sse_sum);
+
+          sse_mul = _mm_mul_pd(sse_zdiff, sse_zdiff);
+          sse_sum = _mm_add_pd(sse_mul, sse_sum);
+
+          sse_vmag = _mm_sqrt_pd(sse_sum);
+
+          sse_fcon = _mm_set1_pd(fcon);
+          sse_PE = _mm_sub_pd(sse_vmag, sse_rlen);
+          sse_PE = _mm_mul_pd(sse_fcon, sse_PE);
+          _mm_store_pd(pe_sum, sse_PE);
+
+          //printf("Here3\n");
+          //printf("PE contriubtion is: %f\n", pe_sum[0]);
+          pe += pe_sum[0];
+          pe += pe_sum[1];
+
+          //printf("Here3.25\n");
+          sse_fx = _mm_mul_pd(sse_PE, sse_rlen);
+          sse_fx = _mm_div_pd(sse_fx, sse_vmag);
+          //printf("Here3.33\n");
+          _mm_store_pd(fx_sum, sse_fx);
+          fx[ny*n+nx] += fx_sum[0] + fx_sum[1];
+          
+          //printf("Here3.5\n");
+          sse_fy = _mm_mul_pd(sse_PE, sse_rlen);
+          sse_fy = _mm_div_pd(sse_fy, sse_vmag);
+          _mm_store_pd(fy_sum, sse_fy);
+          fy[ny*n+nx] += fy_sum[0] + fy_sum[1];
+
+          //printf("Here3.75\n");
+          //printf("fz contribution is: %f\n", fz_sum[0]);
+          sse_fz = _mm_mul_pd(sse_PE, sse_rlen);
+          sse_fz = _mm_div_pd(sse_fz, sse_vmag);
+          _mm_store_pd(fz_sum, sse_fz);
+          fy[ny*n+nx] += fz_sum[0] + fz_sum[1];
+
+          //printf("Here4\n");
+          //scanf("%s");
+        }
+
+        // handles the last column if unaligned
+        if (MIN(nx+delta+1,n)%2 == 0)
+        {
+          //printf("Here5\n");
+          //printf("-- -- A.2': %d\n", dx);
+          // compute reference distance
+          rlen=sqrt((double)((nx-dx)*(nx-dx)+(ny-dy)*(ny-dy)))*sep;
+          
+          // compute actual distance
+          xdiff = x[dy*n+dx]-x[ny*n+nx];
+          ydiff = y[dy*n+dx]-y[ny*n+nx];
+          zdiff = z[dy*n+dx]-z[ny*n+nx];
+          vmag=sqrt(xdiff*xdiff+ydiff*ydiff+zdiff*zdiff); 
+
+          //potential energy and force
+          pe += fcon*(vmag-rlen);
+          fx[ny*n+nx]+=fcon*xdiff*(vmag-rlen)/vmag;
+          fy[ny*n+nx]+=fcon*ydiff*(vmag-rlen)/vmag;
+          fz[ny*n+nx]+=fcon*zdiff*(vmag-rlen)/vmag; 
         }
       }
+
       // Section C
       dy=ny;
       for (dx=MAX(nx-delta,0);dx<nx;dx++){
@@ -348,6 +456,7 @@ double eval_pef(int n, int delta, double grav, double sep,
         fy[ny*n+nx]+=fcon*ydiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
         fz[ny*n+nx]+=fcon*zdiff*(vmag-rlen)*vmag_i; //changed '/' to '*'
       }
+
       // Section D
       for (dx=nx+1;dx<MIN(nx+delta+1,n);dx++){
         // compute reference distance
