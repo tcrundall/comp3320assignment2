@@ -11,6 +11,8 @@ GLIBS   = -lGL -lGLU -lX11 -lglut -lXi -lXmu
 endif
 
 OBJS = cloth_code.o
+OBJS_OPT = cloth_code_opt.o
+OBJS_SSE = cloth_code_sse.o
 
 all: 	opengl_main kernel_main
 
@@ -19,6 +21,12 @@ opengl_main:	opengl_main.o ${OBJS}
 
 kernel_main:	kernel_main.o ${OBJS}
 	$(CC) $(CFLAGS) -o $@ kernel_main.o ${OBJS} $(LDFLAGS)
+
+kernel_main_opt:	kernel_main_opt.o ${OBJS_OPT}
+	$(CC) $(CFLAGS) -o $@ kernel_main_opt.o ${OBJS_OPT} $(LDFLAGS)
+
+kernel_main_sse:	kernel_main_sse.o ${OBJS_SSE}
+	$(CC) $(CFLAGS) -msse2 -o $@ kernel_main_sse.o ${OBJS_SSE} $(LDFLAGS)
 
 .SUFFIXES:	.o .c
 

@@ -25,13 +25,14 @@ kernel_main:	kernel_main.o ${OBJS}
 kernel_main_opt:	kernel_main_opt.o ${OBJS_OPT}
 	$(CC) $(CFLAGS) -o $@ kernel_main_opt.o ${OBJS_OPT} $(LDFLAGS)
 
-kernel_main_sse:	kernel_main_sse.o ${OBJS_SSE}
+kernel_main_sse:	kernel_main_sse.o ${OBJS}
 	$(CC) $(CFLAGS) -msse2 -o $@ kernel_main_sse.o ${OBJS_SSE} $(LDFLAGS)
 
 .SUFFIXES:	.o .c
 
 %.o : %.c	cloth_code.h cloth_param.h
 	$(CC) $(CFLAGS) -c $<
+
 
 clean:
 	/bin/rm a.out *.o *~ *_main
