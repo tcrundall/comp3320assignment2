@@ -14,7 +14,7 @@ OBJS = cloth_code.o
 OBJS_OPT = cloth_code_opt.o
 OBJS_SSE = cloth_code_sse.o
 
-all: 	opengl_main kernel_main
+all: 	opengl_main kernel_main kernel_main_opt kernel_main_sse
 
 opengl_main:	opengl_main.o ${OBJS}
 	$(CC) $(CFLAGS) -o $@ opengl_main.o ${OBJS} $(LDFLAGS) $(GLIBS)
@@ -35,7 +35,7 @@ kernel_main_sse:	kernel_main_sse.o ${OBJS_SSE}
 
 
 clean:
-	/bin/rm a.out *.o *~ *_main
+	/bin/rm *.o *~ *_main *_opt *_sse
 
 
 
