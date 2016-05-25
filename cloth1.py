@@ -165,9 +165,10 @@ while (1):
       fvector=dist/dist.mag*myball.radius
       node.pos=vector(myball.x,myball.y,myball.z)+fvector
 
-                        # setting velocity in fvector direction to zero:
+      # finding the unit vector from centre of ball to node
       fvec_u = fvector/dist.mag
 
+      # setting the radial velocity from ball centre to 0
       node.velocity=node.velocity-(fvec_u.x*node.velocity.x +
                                   fvec_u.y*node.velocity.y +
                                   fvec_u.z*node.velocity.z) * fvec_u
