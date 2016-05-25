@@ -59,6 +59,24 @@ def main2():
         plt.savefig(string)
         plt.clf()
 
+def main4():
+    node_index = 0
+    xlist = deltas
+    ylist = [math.sqrt(data[0][node_index][i][0]) for i, delta in enumerate(deltas)]
+    zlist = [math.sqrt(data[1][node_index][i][0]) for i, delta in enumerate(deltas)]
+    qlist = [math.sqrt(data[2][node_index][i][0]) for i, delta in enumerate(deltas)]
+
+    plt.xlabel("delta")
+    plt.ylabel("time (ms)")
+    plt.plot(xlist,ylist,'--ro', label='original')
+    plt.plot(xlist,zlist,'--bo', label='improved')
+    plt.plot(xlist,qlist,'--go', label='SSE')
+    plt.legend(loc=2)
+    string = "sqrt eval per call vs deltas, nodes=" + str(nodes[node_index])
+    plt.title(string)
+    plt.savefig(string)
+    plt.clf()
+
 def main3():
     ylist = [math.sqrt(data[0][i][d_index][0]) for i, node in enumerate(nodes)]
     zlist = [math.sqrt(data[1][i][d_index][0]) for i, node in enumerate(nodes)]
@@ -73,4 +91,4 @@ def main3():
     plt.title(string)
     plt.savefig(string)
     plt.clf()
-main2()
+main4()
